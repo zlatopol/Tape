@@ -1,62 +1,48 @@
+#include <Tape.h>
 #include <TapeSorter.h>
 #include <TmpTapeGenerator.h>
-#include <Tape.h>
-
-#include <vector>
 #include <algorithm>
+#include <vector>
 
-Tape vectorToTape(const std::vector<int> &data, TmpTapeGenerator &tape_generator)
-{
-    auto tape = tape_generator.fromPath(tape_generator.generate(data.size() * sizeof(int)));
+#include <nlohmann/json.hpp>
 
-    std::copy(data.begin(), data.end(), tape.begin());
+using json = nlohmann::json;
 
-    tape.rewind();
+int main(int argc, char *argv[]) {
+  if (argc != 4) {
+    std::cout << "Usage: " << argv[0]
+              << " (config_file_path) (input_file_path) (output_file_path)"
+              << std::endl;
+    return 1;
+  }
+  std::string name_file = argv[1];
+  std::ifstream f(name_file);
+  json data = json::parse(f);
+  size_t max_memory = data["max_memory"];
+  std::chrono::milliseconds delay_read =
+      std::chrono::milliseconds(data["delay_read"]);
+  std::chrono::milliseconds delay_write =
+      std::chrono::milliseconds(data["delay_write"]);
+  std::chrono::milliseconds delay_rewind =
+      std::chrono::milliseconds(data["delay_rewind"]);
+  std::chrono::milliseconds delay_next =
+      std::chrono::milliseconds(data["delay_next"]);
+  std::chrono::milliseconds delay_prev =
+      std::chrono::milliseconds(data["delay_prev"]);
 
-    return tape;
-}
+  Tape input_tape(argv[2], std::filesystem::file_size(argv[2]), delay_write,
+                  delay_read, delay_rewind, delay_prev, delay_next);
 
-std::vector<int> tapeToVector(Tape &tape)
-{
-    std::vector<int> result;
+  Tape output_tape(argv[3], std::filesystem::file_size(argv[2]), delay_write,
+                   delay_read, delay_rewind, delay_prev, delay_next);
 
-    tape.rewind();
+  TmpTapeGenerator tape_generator(delay_write, delay_read, delay_rewind,
+                                  delay_prev, delay_next);
 
-    std::copy(tape.begin(), tape.end(), std::back_inserter(result));
+  TapeSorter sorter{tape_generator, std::move(input_tape),
+                    std::move(output_tape), max_memory};
 
-    return result;
-}
+  sorter.sort();
 
-std::vector<int> generateVector() {
-    const int val_cnt = 123456;
-
-    std::vector<int> rand_vals(val_cnt);
-    
-    for (auto& el: rand_vals) {
-        el = rand();
-    }
-
-    return rand_vals;
-}
-
-int main()
-{
-    TmpTapeGenerator tape_generator{{}};
-
-    const auto input_vec = generateVector();
-
-    auto input_tape = vectorToTape(input_vec, tape_generator);
-    auto output_tape = tape_generator.fromPath(tape_generator.generate(input_tape.size()));
-
-    TapeSorter sorter{tape_generator, std::move(input_tape), std::move(output_tape), 23 * sizeof(int)};
-
-    sorter.sort();
-
-    output_tape = sorter.getOutputTape();
-
-    auto res_vec = tapeToVector(output_tape);
-    auto check_vec = input_vec;
-    std::sort(check_vec.begin(), check_vec.end());
-
-    std::cout << "is equal: " << std::boolalpha << std::equal(res_vec.begin(), res_vec.end(), check_vec.begin(), check_vec.end()) << std::endl;
+  return 0;
 }

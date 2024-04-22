@@ -1,21 +1,22 @@
 #pragma once
 
-#include <TmpTapeGenerator.h>
 #include <Tape.h>
+#include <TmpTapeGenerator.h>
 
-class TapeSorter
-{
+class TapeSorter {
 public:
-    TapeSorter(TmpTapeGenerator tape_generator, Tape input, Tape output_, std::size_t max_memory);
+  TapeSorter(TmpTapeGenerator tape_generator, Tape input, Tape output_,
+             std::size_t max_memory);
 
-    void sort();
+  void sort();
 
-    Tape getOutputTape();
+  Tape getOutputTape();
+
 private:
-    void merge(Tape& fst, Tape& snd, Tape& out);
+  void merge(Tape &fst, Tape &snd, Tape &out);
 
-    TmpTapeGenerator tape_generator_;
-    Tape input_;
-    Tape output_;
-    std::size_t max_int_cnt_;
+  TmpTapeGenerator tape_generator_;
+  Tape input_;
+  Tape output_;
+  std::size_t max_int_cnt_;
 };

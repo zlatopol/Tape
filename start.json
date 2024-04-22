@@ -1,0 +1,8 @@
+{
+    "max_memory": 16,
+    "delay_read": 1,
+    "delay_write": 2,
+    "delay_rewind": 3,
+    "delay_next": 4,
+    "delay_prev": 5
+}
